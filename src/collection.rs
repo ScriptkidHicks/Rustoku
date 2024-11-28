@@ -32,6 +32,19 @@ impl Collection {
     pub fn get_possible_numbers(&self, index: usize) -> Vec<u32> {
         self.squares[index].get_possible_numbers()
     }
+
+    pub fn remove_possibility(&mut self, index: usize, value: u32) {
+        self.squares[index].remove_possibility(value);
+    }
+
+    pub fn alter_square(
+        &mut self,
+        index: usize,
+        value: u32,
+        callback: &dyn Fn(&mut Square, u32) -> (),
+    ) {
+        callback(&mut self.squares[index], value);
+    }
 }
 
 impl fmt::Display for Collection {

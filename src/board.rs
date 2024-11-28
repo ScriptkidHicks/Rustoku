@@ -1,42 +1,63 @@
 use std::{fmt, fs, path::Path};
 
 use crate::collection::*;
-use crate::helper_functions::*;
+use crate::square::*;
 
 pub struct Board {
     rows: [Collection; 9],
-    columns: [Collection; 9],
-    cubes: [Collection; 9], //cubes are iterated left to right, top to bottom
     unsolved_squares: u32,
 }
 
 impl Board {
+    //a board only has rows. columns and cubes are conceptual indexes, rather than actual structures.
+    //THIS IS BECAUSE RUST WON'T LET ME HAVE MUTUAL REFERENCE FOR OBVIOUS BUT ANNOYING REASONS
     pub fn default() -> Board {
         Board {
             rows: [Collection::default(); 9],
-            columns: [Collection::default(); 9],
-            cubes: [Collection::default(); 9],
             unsolved_squares: 81,
         }
     }
 
+    pub fn col_iter_mut(
+        &mut self,
+        col_index: usize,
+        value: u32,
+        callback: &dyn Fn(&mut Square, u32) -> (),
+    ) {
+        for row_index in 0..9 {
+            self.rows[row_index].alter_square(col_index, value, callback);
+        }
+    }
+
+    pub fn cube_iter_mut(
+        &mut self,
+        row_index: usize,
+        col_index: usize,
+        value: u32,
+        callback: &dyn Fn(&mut Square, u32) -> (),
+    ) {
+        let row_floor = (row_index / 3) * 3;
+        let col_floor = (col_index / 3) * 3;
+
+        for internal_row_index in row_floor..(row_floor + 3) {
+            for internal_col_index in col_floor..(col_floor + 3) {
+                self.rows[internal_row_index].alter_square(internal_col_index, value, callback);
+            }
+        }
+    }
+
     pub fn set_square(&mut self, row_index: usize, col_index: usize, value: u32) {
-        // we have to do a little bit of indexing math to get the correct cube location in our array of cubes
-        let (cube_index, inner_cube_index) = row_and_col_to_cube_location(row_index, col_index);
+        //this will automatically remove the possiblity from the row, but we also need to do column and cube
         self.rows[row_index].set_square(col_index, value);
-        self.columns[col_index].set_square(row_index, value);
-        self.cubes[cube_index].set_square(inner_cube_index, value);
+        self.col_iter_mut(col_index, value, &Square::remove_possibility);
+        self.cube_iter_mut(row_index, col_index, value, &Square::remove_possibility);
         self.unsolved_squares -= 1;
     }
 
     pub fn clear_squares(&mut self) {
         for row_index in 0..9 {
             for col_index in 0..9 {
-                let (cube_index, inner_cube_index) =
-                    row_and_col_to_cube_location(row_index, col_index);
                 self.rows[row_index].set_square(col_index, 0);
-                self.columns[col_index].set_square(row_index, 0);
-                self.cubes[cube_index].set_square(inner_cube_index, 0);
             }
         }
 
@@ -110,11 +131,8 @@ impl Board {
 
     //this function gets the intersection of possibilities for row, col, and cube at a square index
     pub fn get_possible_numbers(&self, row_index: usize, col_index: usize) -> Vec<u32> {
-        let (cube_major, cube_minor) = row_and_col_to_cube_location(row_index, col_index);
         let row_possibles = self.rows[row_index].get_possible_numbers(col_index);
-        let col_possibles = self.columns[col_index].get_possible_numbers(row_index);
-        let cube_possibles = self.cubes[cube_major].get_possible_numbers(cube_minor);
-        let possibles = collapse_three_vectors(row_possibles, col_possibles, cube_possibles);
+        let possibles = row_possibles;
         if possibles.len() == 0 {
             panic!("Somehow an empty square has no possibilities. This should be impossible");
         }
@@ -168,7 +186,7 @@ impl Board {
 }
 
 impl fmt::Display for Board {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, _: &mut fmt::Formatter) -> fmt::Result {
         for (index, row) in self.rows.iter().enumerate() {
             println!("{}", row);
             if index == 2 || index == 5 {
