@@ -155,6 +155,9 @@ impl Board {
         for row_index in 0..9 {
             for col_index in 0..9 {
                 if self.square_empty(row_index, col_index) {
+                    if (row_index == 8 && col_index == 8) {
+                        println!("We should be hitting the bottom right square");
+                    }
                     //don't bother looking at squares that aren't empty.
                     change_occured = change_occured || solver_function(self, row_index, col_index);
                 }
@@ -182,6 +185,84 @@ impl Board {
             }
         }
         change_occured
+    }
+
+    pub fn number_fits_here_in_row(
+        &mut self,
+        row_index: usize,
+        col_index: usize,
+        number: u32,
+    ) -> bool {
+        for (index, square) in self.rows[row_index].squares.iter_mut().enumerate() {
+            if index != col_index {
+                // we only care if it's a DIFFERENT square
+                if square.number_possible(number) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    pub fn number_fits_here_in_col(
+        &mut self,
+        row_index: usize,
+        col_index: usize,
+        number: u32,
+    ) -> bool {
+        for (index, row) in self.rows.iter_mut().enumerate() {
+            if index != row_index {
+                if row.squares[col_index].number_possible(number) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    pub fn number_fits_here_in_cube(
+        &mut self,
+        row_index: usize,
+        col_index: usize,
+        number: u32,
+    ) -> bool {
+        let row_floor = (row_index / 3) * 3;
+        let col_floor = (col_index / 3) * 3;
+        for internal_row_index in row_floor..(row_floor + 3) {
+            for internal_col_index in col_floor..(col_floor + 3) {
+                if internal_row_index != row_index || internal_col_index != col_index {
+                    if self.rows[internal_row_index].squares[internal_col_index]
+                        .number_possible(number)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    pub fn square_only_possible_location(
+        board: &mut Board,
+        row_index: usize,
+        col_index: usize,
+    ) -> bool {
+        let mut change_made = false;
+
+        let square_possibilities = board.rows[row_index].get_possible_numbers(col_index);
+        for number in square_possibilities {
+            if board.number_fits_here_in_row(row_index, col_index, number)
+                || board.number_fits_here_in_col(row_index, col_index, number)
+                || board.number_fits_here_in_cube(row_index, col_index, number)
+            {
+                board.set_square(row_index, col_index, number);
+                change_made = true;
+                break;
+            }
+        }
+
+        change_made
     }
 }
 

@@ -1,10 +1,10 @@
-use std::fmt;
+use std::{fmt, slice::Iter};
 
 use crate::square::*;
 
 #[derive(Copy, Clone)]
 pub struct Collection {
-    squares: [Square; 9],
+    pub squares: [Square; 9],
 }
 
 impl Collection {
