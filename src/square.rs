@@ -129,6 +129,10 @@ impl Square {
         }
     }
 
+    pub fn get_value(&self) -> u32 {
+        self.value
+    }
+
     pub fn get_possible_numbers(&self) -> Vec<u32> {
         self.possibilities.get_possible_numbers()
     }

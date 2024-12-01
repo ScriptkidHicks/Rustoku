@@ -1,6 +1,7 @@
 use std::{fmt, fs, path::Path};
 
 use crate::collection::*;
+use crate::square;
 use crate::square::*;
 
 pub struct Board {
@@ -263,6 +264,55 @@ impl Board {
         }
 
         change_made
+    }
+
+    // this one is a touch difficult to explain. Let us say that we have a square.
+    pub fn nakend_n_ple(board: &mut Board, row_index: usize, col_index: usize) -> bool {
+        let change_made = false;
+
+        change_made
+    }
+
+    //this function is for printing out a version of the board in terms of possibilities.
+    pub fn show_me_the_possibilities(&self) {
+        println!("=====================================================");
+        for (row_index, row) in self.rows.iter().enumerate() {
+            //we do 3 passes
+            Board::posssibilities_inner_loop(row, 1, 4);
+            Board::posssibilities_inner_loop(row, 4, 7);
+            Board::posssibilities_inner_loop(row, 7, 10);
+            if row_index == 2 || row_index == 5 {
+                println!("=====================================================");
+            } else {
+                println!("-----------------------------------------------------");
+            }
+        }
+        println!("=====================================================");
+    }
+
+    fn posssibilities_inner_loop(row: &Collection, start: u32, end: u32) {
+        print!("|| |");
+        for (square_index, square) in row.squares.iter().enumerate() {
+            let square_possibles = square.get_possible_numbers();
+            for i in start..end {
+                if (square_possibles.len() == 0) {
+                    print!("{}", square.get_value());
+                } else {
+                    if square_possibles.contains(&i) {
+                        print!("{}", i);
+                    } else {
+                        print!(" ");
+                    }
+                }
+            }
+
+            if square_index == 2 || square_index == 5 {
+                print!("| || |");
+            } else {
+                print!("|");
+            }
+        }
+        println!(" ||");
     }
 }
 
