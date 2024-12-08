@@ -97,8 +97,12 @@ impl Possiblities {
         self.possible_numbers[(number - 1) as usize].possible
     }
 
-    pub fn remove(&mut self, number: u32) {
+    pub fn remove(&mut self, number: u32) -> bool {
+        let before_bool = self.possible_numbers[(number - 1) as usize].possible;
         self.possible_numbers[(number - 1) as usize].possible = false;
+
+        //tells you whether removing the possiblity altered the square.
+        return before_bool != false;
     }
 }
 
@@ -120,13 +124,17 @@ impl Square {
         self.value == 0
     }
 
-    pub fn set_value(&mut self, input_value: u32) {
+    pub fn set_value(&mut self, input_value: u32) -> bool {
+        if self.value == input_value {
+            return false;
+        }
         self.value = input_value;
-        if (input_value == 0) {
+        if input_value == 0 {
             self.possibilities.reset();
         } else {
             self.possibilities.clear();
         }
+        return true;
     }
 
     pub fn get_value(&self) -> u32 {
@@ -137,8 +145,17 @@ impl Square {
         self.possibilities.get_possible_numbers()
     }
 
-    pub fn remove_possibility(&mut self, number: u32) {
-        self.possibilities.remove(number);
+    pub fn remove_possibility(&mut self, number: u32) -> bool {
+        self.possibilities.remove(number)
+    }
+
+    pub fn remove_possibilities(&mut self, numbers: &Vec<u32>) -> bool {
+        let mut change_made = false;
+        for number in numbers {
+            change_made = self.remove_possibility(*number) || change_made;
+        }
+
+        change_made
     }
 
     //this doesn't stricktly need to be be mutable, but is used in callback functions that also take mutable

@@ -23,11 +23,15 @@ impl Board {
         &mut self,
         col_index: usize,
         value: u32,
-        callback: &dyn Fn(&mut Square, u32) -> (),
-    ) {
+        callback: &dyn Fn(&mut Square, u32) -> bool,
+    ) -> bool {
+        let mut change_made = false;
         for row_index in 0..9 {
-            self.rows[row_index].alter_square(col_index, value, callback);
+            change_made =
+                self.rows[row_index].alter_square(col_index, value, callback) || change_made;
         }
+
+        change_made
     }
 
     pub fn cube_iter_mut(
@@ -35,16 +39,22 @@ impl Board {
         row_index: usize,
         col_index: usize,
         value: u32,
-        callback: &dyn Fn(&mut Square, u32) -> (),
-    ) {
+        callback: &dyn Fn(&mut Square, u32) -> bool,
+    ) -> bool {
         let row_floor = (row_index / 3) * 3;
         let col_floor = (col_index / 3) * 3;
 
+        let mut change_made = false;
+
         for internal_row_index in row_floor..(row_floor + 3) {
             for internal_col_index in col_floor..(col_floor + 3) {
-                self.rows[internal_row_index].alter_square(internal_col_index, value, callback);
+                change_made =
+                    self.rows[internal_row_index].alter_square(internal_col_index, value, callback)
+                        || change_made;
             }
         }
+
+        change_made
     }
 
     pub fn set_square(&mut self, row_index: usize, col_index: usize, value: u32) {
@@ -84,7 +94,7 @@ impl Board {
         }
     }
 
-    pub fn inget_sdk_file(&mut self, file_path: &str) {
+    pub fn ingest_sdk_file(&mut self, file_path: &str) {
         match Board::path_exists(file_path) {
             true => match Board::digest_filepath_to_string(file_path) {
                 Some(ingested_string) => {
@@ -156,9 +166,6 @@ impl Board {
         for row_index in 0..9 {
             for col_index in 0..9 {
                 if self.square_empty(row_index, col_index) {
-                    if (row_index == 8 && col_index == 8) {
-                        println!("We should be hitting the bottom right square");
-                    }
                     //don't bother looking at squares that aren't empty.
                     change_occured = change_occured || solver_function(self, row_index, col_index);
                 }
@@ -266,9 +273,52 @@ impl Board {
         change_made
     }
 
-    // this one is a touch difficult to explain. Let us say that we have a square.
-    pub fn nakend_n_ple(board: &mut Board, row_index: usize, col_index: usize) -> bool {
-        let change_made = false;
+    // this one is a touch difficult to explain. Let us say that we have a cube. In that cube the numbers
+    // 3 and 6 haven't been placed yet. Two squares in the cube can contain ONLY 3 and 6. This means that
+    // every other square can no longer contain 3 or 6. This is because if you placed either of them anywhere else,
+    // then one of the squares would be empty
+    pub fn nakend_nple(&mut self, row_index: usize, col_index: usize, n: usize) -> bool {
+        let mut change_made = false;
+        //we do this work for each row, cube, and col associated with the square
+        let square_possibilities = self.rows[row_index].get_possible_numbers(col_index);
+        let mut possible_placement_squares: Vec<(usize, usize)> = Vec::new(); // a vector of the locations containing the other squares.
+
+        if square_possibilities.len() != n {
+            return false;
+        }
+
+        //row first.
+        possible_placement_squares.push((row_index, col_index));
+
+        for (square_index, square) in self.rows[row_index].squares.iter().enumerate() {
+            if square_index != col_index {
+                //we're looking at a different square
+                let current_square_possibilities = square.get_possible_numbers();
+                if current_square_possibilities == square_possibilities {
+                    //they have identical contents. We can add it as an additional location.
+                    possible_placement_squares.push((row_index, square_index));
+                }
+            }
+        }
+
+        if possible_placement_squares.len() > n {
+            panic!(
+                "Naked Nple has determined that a square in row {} must end up empty!",
+                row_index
+            );
+        }
+
+        if possible_placement_squares.len() == n {
+            //nice so we know that a naked nple can eliminate other squares in this row.
+            for (square_index, square) in self.rows[row_index].squares.iter_mut().enumerate() {
+                if !possible_placement_squares.contains(&(row_index, square_index)) {
+                    //this isn't one of our nple squares. We can remove the possibilities from it.
+                    change_made = square.remove_possibilities(&square_possibilities) || change_made;
+                }
+            }
+        }
+
+        //now lets check the column
 
         change_made
     }

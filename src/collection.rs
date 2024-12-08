@@ -15,14 +15,16 @@ impl Collection {
         }
     }
 
-    pub fn set_square(&mut self, index: usize, value: u32) {
-        self.squares[index].set_value(value);
+    pub fn set_square(&mut self, index: usize, value: u32) -> bool {
+        let change_made = self.squares[index].set_value(value);
         // be sure to remove this possiblity from other squares in the collection
         for square in self.squares.iter_mut() {
             if square.is_empty() {
                 square.remove_possibility(value);
             }
         }
+
+        change_made
     }
 
     pub fn square_empty(&self, index: usize) -> bool {
@@ -41,9 +43,9 @@ impl Collection {
         &mut self,
         index: usize,
         value: u32,
-        callback: &dyn Fn(&mut Square, u32) -> (),
-    ) {
-        callback(&mut self.squares[index], value);
+        callback: &dyn Fn(&mut Square, u32) -> bool,
+    ) -> bool {
+        callback(&mut self.squares[index], value)
     }
 }
 
