@@ -94,14 +94,14 @@ impl Board {
         }
     }
 
-    pub fn ingest_sdk_file(&mut self, file_path: &str) {
+    pub fn ingest_sdk_file(&mut self, file_path: &str) -> bool {
         match Board::path_exists(file_path) {
             true => match Board::digest_filepath_to_string(file_path) {
                 Some(ingested_string) => {
                     let string_parts = ingested_string.split('\n').collect::<Vec<&str>>();
                     if string_parts.len() != 10 {
                         println!("It appears there was an incorrect number of lines in the ingested file");
-                        return;
+                        return false;
                     }
 
                     //now lets parse each one into a row. We get a convenient Usize out of the index
@@ -111,7 +111,7 @@ impl Board {
                         if a && b {
                             println!("One of the lines appears to be formatted incorrectly {} with a and b: {} {}. Clearing the board.", string_part.len(), a, b);
                             self.clear_squares();
-                            return;
+                            return false;
                         }
 
                         for (col_index, char) in string_part.chars().enumerate() {
@@ -123,7 +123,7 @@ impl Board {
                                     None => {
                                         println!("oops! looks like that digit couldn't be processed correctly. Clearing the board.");
                                         self.clear_squares();
-                                        return;
+                                        return false;
                                     }
                                 }
                             }
@@ -132,12 +132,15 @@ impl Board {
                 }
                 None => {
                     println!("Failed to digest that file into a readable string");
+                    return false;
                 }
             },
             false => {
                 println!("The path: '{}' does not appear to exist", file_path);
+                return false;
             }
         }
+        return true;
     }
 
     //this function gets the intersection of possibilities for row, col, and cube at a square index
