@@ -115,4 +115,109 @@ pub fn user_solve_sudoku(board: &mut Board) {
     }
 }
 
-fn utilize_solution_method(board: &mut Board) {}
+fn utilize_solution_method(board: &mut Board) {
+    loop {
+        let continuous: bool;
+        let solution_method: fn(&mut Board, usize, usize) -> bool;
+        let mut change_made = false;
+
+        loop {
+            println!(
+                "Would you like the solution to iterate once, or continuously until changes cease?"
+            );
+            println!("1: Once");
+            println!("2: Continuously");
+            println!("3: Exit");
+            let mut continuous_input = String::new();
+            stdin()
+                .read_line(&mut continuous_input)
+                .expect("Failed to read line");
+
+            let indication_number: u32 = match continuous_input.trim().parse() {
+                Ok(num) => num,
+                Err(_) => {
+                    println!(
+                        "It appears you entered something that wasn't a positive integer. Oops!"
+                    );
+                    continue;
+                }
+            };
+
+            match indication_number {
+                1 => {
+                    continuous = false;
+                    break;
+                }
+                2 => {
+                    continuous = true;
+                    break;
+                }
+                3 => {
+                    return;
+                }
+                _ => {
+                    println!("It looks like you selected a number that wasn't an option.");
+                }
+            }
+        }
+
+        loop {
+            println!("Please select a solution function");
+            println!("1: Naked Singles");
+            println!("2: Hidden Singles");
+            println!("3: Exit");
+
+            let mut function_input = String::new();
+            stdin()
+                .read_line(&mut function_input)
+                .expect("Failed to read line");
+
+            let fun_indication: u32 = match function_input.trim().parse() {
+                Ok(num) => num,
+                Err(_) => {
+                    println!(
+                        "It appears you entered something that wasn't a positive integer. Oops!"
+                    );
+                    continue;
+                }
+            };
+
+            match fun_indication {
+                1 => {
+                    solution_method = Board::naked_single;
+                    break;
+                }
+                2 => {
+                    solution_method = Board::hidden_single;
+                    break;
+                }
+                3 => {
+                    return;
+                }
+                _ => {
+                    println!("It looks like you selected a number that wasn't an option.");
+                }
+            }
+        }
+
+        loop {
+            let circuit_change_made = board.iterate_over_board(&solution_method);
+            change_made = change_made || circuit_change_made;
+            if circuit_change_made && continuous {
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        if (change_made) {
+            println!("A change was made to the board.");
+        } else {
+            println!("The board was unchanged.")
+        }
+
+        println!("{}", board);
+
+        break;
+    }
+}

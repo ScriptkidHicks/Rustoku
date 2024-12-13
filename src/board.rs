@@ -254,11 +254,7 @@ impl Board {
         return true;
     }
 
-    pub fn square_only_possible_location(
-        board: &mut Board,
-        row_index: usize,
-        col_index: usize,
-    ) -> bool {
+    pub fn hidden_single(board: &mut Board, row_index: usize, col_index: usize) -> bool {
         let mut change_made = false;
 
         let square_possibilities = board.rows[row_index].get_possible_numbers(col_index);
