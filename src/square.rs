@@ -162,6 +162,17 @@ impl Square {
     pub fn number_possible(&mut self, number: u32) -> bool {
         self.possibilities.contains(number)
     }
+
+    pub fn generate_string(&self) -> String {
+        match self.value {
+            0 => {
+                " ".to_string()
+            }
+            _ => {
+                self.value.to_string()
+            }
+        }
+    }
 }
 
 impl fmt::Display for Square {

@@ -1,4 +1,4 @@
-use std::{io::stdin, path::Path};
+use std::{fs::{self, File}, io::{stdin, Write}, path::Path};
 
 use crate::Board;
 
@@ -60,7 +60,7 @@ pub fn query_file_for_ingestion(board: &mut Board) -> bool {
         }
 
         if Path::new(trimmed_path).exists() {
-            if board.ingest_sdk_file(trimmed_path) {
+            if ingest_sdk_file(board, trimmed_path) {
                 success = true;
                 println!("Board imported successfully.");
                 break;
@@ -105,6 +105,7 @@ pub fn user_solve_sudoku(board: &mut Board) {
                 utilize_solution_method(board);
             }
             3 => {
+                save_sudoku_game(board);
                 break;
             }
             4 => {
@@ -220,4 +221,98 @@ fn utilize_solution_method(board: &mut Board) {
 
         break;
     }
+}
+
+
+fn save_sudoku_game(board: &Board) {
+    loop {
+        println!("Please enter a name of the file you would like to save the game to, or 'Exit' to exit:");
+        let mut indication = String::new();
+
+        stdin()
+            .read_line(&mut indication)
+            .expect("Failed to read line");
+
+        let trimmed_indication = indication.trim();
+
+        if trimmed_indication.to_lowercase() == "exit" {
+            break;
+        }
+
+        if path_exists(trimmed_indication) {
+            println!(
+                "Hey, that file already exists! I can't have you deleting files that already exist!"
+            );
+        } else {
+            save_sdk_file(board, trimmed_indication);
+            break;
+        }
+    }
+}
+
+fn save_sdk_file(board: &Board, path: &str) {
+    let mut sdk_file = File::create(path).expect("creation failed");
+    sdk_file.write(board.generate_string_of_self().as_bytes()).expect("Write failed!");
+
+    println!("Sudoku file saved successfully!");
+}
+
+pub fn path_exists(file_path: &str) -> bool {
+        Path::new(file_path).exists()
+    }
+
+pub fn digest_filepath_to_string(file_path: &str) -> Option<String> {
+    match fs::read_to_string(file_path) {
+        Ok(string_value) => Some(string_value),
+        Err(_) => None,
+    }
+}
+
+pub fn ingest_sdk_file(board: &mut Board, file_path: &str) -> bool {
+    match path_exists(file_path) {
+        true => match digest_filepath_to_string(file_path) {
+            Some(ingested_string) => {
+                let string_parts = ingested_string.split('\n').collect::<Vec<&str>>();
+                if string_parts.len() != 10 {
+                    println!("It appears there was an incorrect number of lines in the ingested file");
+                    return false;
+                }
+
+                //now lets parse each one into a row. We get a convenient Usize out of the index
+                for (row_index, string_part) in string_parts.iter().enumerate() {
+                    let a = string_parts.len() == 0;
+                    let b = string_parts.len() == 0;
+                    if a && b {
+                        println!("One of the lines appears to be formatted incorrectly {} with a and b: {} {}. Clearing the board.", string_part.len(), a, b);
+                        board.clear_squares();
+                        return false;
+                    }
+
+                    for (col_index, char) in string_part.chars().enumerate() {
+                        if char.is_numeric() {
+                            match char.to_digit(10) {
+                                Some(digit) => {
+                                    board.set_square(row_index, col_index, digit);
+                                }
+                                None => {
+                                    println!("oops! looks like that digit couldn't be processed correctly. Clearing the board.");
+                                    board.clear_squares();
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            None => {
+                println!("Failed to digest that file into a readable string");
+                return false;
+            }
+        },
+        false => {
+            println!("The path: '{}' does not appear to exist", file_path);
+            return false;
+        }
+    }
+    return true;
 }

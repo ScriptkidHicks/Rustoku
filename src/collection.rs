@@ -47,6 +47,18 @@ impl Collection {
     ) -> bool {
         callback(&mut self.squares[index], value)
     }
+
+    pub fn generate_collection_string(&self) -> String {
+        let mut accum_string = String::new();
+
+        for square in self.squares {
+            accum_string += square.generate_string().as_str()
+        }
+
+        accum_string += "\n";
+
+        accum_string
+    }
 }
 
 impl fmt::Display for Collection {

@@ -79,68 +79,18 @@ impl Board {
         self.rows[row_index].square_empty(col_index)
     }
 
-    pub fn self_solved(&self) -> bool {
+    pub fn solved(&self) -> bool {
         self.unsolved_squares == 0
     }
 
-    pub fn path_exists(file_path: &str) -> bool {
-        Path::new(file_path).exists()
-    }
+    pub fn generate_string_of_self(&self) -> String {
+        let mut accum_string = String::new();
 
-    pub fn digest_filepath_to_string(file_path: &str) -> Option<String> {
-        match fs::read_to_string(file_path) {
-            Ok(string_value) => Some(string_value),
-            Err(_) => None,
+        for row in self.rows {
+            accum_string += row.generate_collection_string().as_str();
         }
-    }
 
-    pub fn ingest_sdk_file(&mut self, file_path: &str) -> bool {
-        match Board::path_exists(file_path) {
-            true => match Board::digest_filepath_to_string(file_path) {
-                Some(ingested_string) => {
-                    let string_parts = ingested_string.split('\n').collect::<Vec<&str>>();
-                    if string_parts.len() != 10 {
-                        println!("It appears there was an incorrect number of lines in the ingested file");
-                        return false;
-                    }
-
-                    //now lets parse each one into a row. We get a convenient Usize out of the index
-                    for (row_index, string_part) in string_parts.iter().enumerate() {
-                        let a = string_parts.len() == 0;
-                        let b = string_parts.len() == 0;
-                        if a && b {
-                            println!("One of the lines appears to be formatted incorrectly {} with a and b: {} {}. Clearing the board.", string_part.len(), a, b);
-                            self.clear_squares();
-                            return false;
-                        }
-
-                        for (col_index, char) in string_part.chars().enumerate() {
-                            if char.is_numeric() {
-                                match char.to_digit(10) {
-                                    Some(digit) => {
-                                        self.set_square(row_index, col_index, digit);
-                                    }
-                                    None => {
-                                        println!("oops! looks like that digit couldn't be processed correctly. Clearing the board.");
-                                        self.clear_squares();
-                                        return false;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                None => {
-                    println!("Failed to digest that file into a readable string");
-                    return false;
-                }
-            },
-            false => {
-                println!("The path: '{}' does not appear to exist", file_path);
-                return false;
-            }
-        }
-        return true;
+        accum_string
     }
 
     //this function gets the intersection of possibilities for row, col, and cube at a square index
